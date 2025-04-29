@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cachesrv/config"
 	"cachesrv/internal/handler"
 	"cachesrv/internal/repository"
 	"cachesrv/internal/service"
@@ -10,19 +11,16 @@ import (
 )
 
 func main() {
-	redisAddr := "localhost:32768"
-	redisPassword := "redispw"
-	redisDB := 0
+	cfg := config.LoadConfig()
 
-	cacheRepo := repository.NewRedisRepository(redisAddr, redisPassword, redisDB)
+	cacheRepo := repository.NewRedisRepository(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
 	cacheService := service.NewCacheService(cacheRepo)
 	cacheHandler := handler.NewCacheHandler(cacheService)
 
 	r := gin.Default()
 	r.GET("/cache", cacheHandler.GetCache)
 
-	port := 8080
-	addr := fmt.Sprintf(":%d", port)
+	addr := fmt.Sprintf(":%s", cfg.ServerPort)
 	if err := r.Run(addr); err != nil {
 		log.Fatal(err)
 	}
