@@ -17,6 +17,7 @@ type CacheService struct {
 
 type CacheControl struct {
 	NoCache bool
+	NoStore bool
 }
 
 func NewCacheService(repo repository.CacheRepository) *CacheService {
@@ -68,10 +69,15 @@ func (s *CacheService) GetOrFetch(ctx context.Context, cacheKey string, apiUrl s
 				NoCache:      cc.NoCache,
 			}
 
+			if cc.NoStore {
+				return newCache, nil
+			}
+
 			err = s.repo.Set(ctx, cacheKey, newCache, ttl)
 			if err != nil {
 				fmt.Print(err)
 			}
+
 			return newCache, nil
 		}
 
@@ -107,6 +113,10 @@ func (s *CacheService) GetOrFetch(ctx context.Context, cacheKey string, apiUrl s
 		NoCache:      cc.NoCache,
 	}
 
+	if cc.NoStore {
+		return cache, nil
+	}
+
 	err = s.repo.Set(ctx, cacheKey, cache, ttl)
 	if err != nil {
 		fmt.Print(err)
@@ -121,6 +131,8 @@ func parseCacheControl(header string) CacheControl {
 	for _, d := range directives {
 		if strings.TrimSpace(strings.ToLower(d)) == "no-cache" {
 			cc.NoCache = true
+		} else if strings.TrimSpace(strings.ToLower(d)) == "no-store" {
+			cc.NoStore = true
 		}
 	}
 	return cc
