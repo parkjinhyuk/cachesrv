@@ -22,7 +22,6 @@ func (h *CacheHandler) GetCache(c *gin.Context) {
 	cacheKey := c.Query("cache_key")
 	apiURL := c.Query("api_url")
 	ttl, err := time.ParseDuration(c.DefaultQuery("ttl", "60") + "s")
-
 	if apiURL == "" || cacheKey == "" || err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid param"})
 		return

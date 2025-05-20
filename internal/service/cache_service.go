@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -18,6 +19,7 @@ type CacheService struct {
 type CacheControl struct {
 	NoCache bool
 	NoStore bool
+	MaxAge  int
 }
 
 func NewCacheService(repo repository.CacheRepository) *CacheService {
@@ -41,13 +43,21 @@ func (s *CacheService) GetOrFetch(ctx context.Context, cacheKey string, apiUrl s
 		return nil, err
 	}
 
-	if newCache.NoStore {
+	if !newCache.NoStore {
+		if newCache.MaxAge >= 0 {
+			ttl = time.Duration(newCache.MaxAge) * time.Second
+		}
+
 		if err = s.repo.Set(ctx, cacheKey, newCache, ttl); err != nil {
 			fmt.Print(err)
 		}
 	}
 
 	return newCache, nil
+}
+
+func isValidCache(c *model.Cache) bool {
+	return c != nil && !c.NoCache
 }
 
 func (s *CacheService) fetchFromOrigin(ctx context.Context, apiUrl string, cached *model.Cache) (*model.Cache, error) {
@@ -88,22 +98,27 @@ func (s *CacheService) fetchFromOrigin(ctx context.Context, apiUrl string, cache
 		CachedAt:     time.Now(),
 		NoCache:      cc.NoCache,
 		NoStore:      cc.NoStore,
+		MaxAge:       cc.MaxAge,
 	}, nil
-}
-
-func isValidCache(c *model.Cache) bool {
-	return c != nil && !c.NoCache
 }
 
 func parseCacheControl(header string) CacheControl {
 	cc := CacheControl{}
 	directives := strings.Split(header, ",")
 	for _, d := range directives {
-		switch strings.ToLower(strings.TrimSpace(d)) {
-		case "no-cache":
+		d = strings.TrimSpace(d)
+		switch {
+		case d == "no-cache":
 			cc.NoCache = true
-		case "no-store":
+		case d == "no-store":
 			cc.NoStore = true
+		case strings.HasPrefix(d, "max-age="):
+			parts := strings.SplitN(d, "=", 2)
+			if len(parts) == 2 {
+				if age, err := strconv.Atoi(parts[1]); err == nil {
+					cc.MaxAge = age
+				}
+			}
 		}
 	}
 

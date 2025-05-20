@@ -9,4 +9,5 @@ type Cache struct {
 	CachedAt     time.Time `json:"cached_at"`
 	NoCache      bool      `json:"no_cache"`
 	NoStore      bool      `json:"-"`
+	MaxAge       int       `json:"-"`
 }
