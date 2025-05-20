@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"cachesrv/config"
 	"cachesrv/internal/model"
 	"context"
 	"encoding/json"
@@ -18,11 +19,11 @@ type redisRepository struct {
 	client *redis.Client
 }
 
-func NewRedisRepository(addr string, password string, db int) CacheRepository {
+func NewRedisRepository(cfg *config.Redis) CacheRepository {
 	c := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
+		Addr:     cfg.Addr,
+		Password: cfg.Password,
+		DB:       cfg.DB,
 	})
 
 	return &redisRepository{

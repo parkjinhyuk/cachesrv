@@ -13,14 +13,14 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 
-	cacheRepo := repository.NewRedisRepository(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
+	cacheRepo := repository.NewRedisRepository(cfg.Redis)
 	cacheService := service.NewCacheService(cacheRepo)
 	cacheHandler := handler.NewCacheHandler(cacheService)
 
 	r := gin.Default()
 	r.GET("/cache", cacheHandler.GetCache)
 
-	addr := fmt.Sprintf(":%s", cfg.ServerPort)
+	addr := fmt.Sprintf(":%s", cfg.Server.Port)
 	if err := r.Run(addr); err != nil {
 		log.Fatal(err)
 	}
