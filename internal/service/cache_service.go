@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -35,6 +36,7 @@ func (s *CacheService) GetOrFetch(ctx context.Context, cacheKey string, apiUrl s
 	}
 
 	if isValidCache(cached) {
+		s.recordHitAsync(ctx, apiUrl)
 		return cached, nil
 	}
 
@@ -123,4 +125,16 @@ func parseCacheControl(header string) CacheControl {
 	}
 
 	return cc
+}
+
+func (s *CacheService) recordHitAsync(ctx context.Context, url string) {
+	go func() {
+		if err := s.repo.AddRecentHit(ctx, url); err != nil {
+			log.Printf("recent_hit err: %v", err)
+		}
+	}()
+}
+
+func (s *CacheService) RecentHits(ctx context.Context, n int) ([]string, error) {
+	return s.repo.RecentHits(ctx, n)
 }

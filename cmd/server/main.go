@@ -19,7 +19,7 @@ func main() {
 
 	r := gin.Default()
 	r.GET("/cache", cacheHandler.GetCache)
-
+	r.GET("/recent-hits", cacheHandler.RecentHits)
 	addr := fmt.Sprintf(":%s", cfg.Server.Port)
 	if err := r.Run(addr); err != nil {
 		log.Fatal(err)

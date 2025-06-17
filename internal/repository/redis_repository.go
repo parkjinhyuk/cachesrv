@@ -13,6 +13,8 @@ import (
 type CacheRepository interface {
 	Set(ctx context.Context, key string, cache *model.Cache, ttl time.Duration) error
 	Get(ctx context.Context, key string) (*model.Cache, error)
+	AddRecentHit(ctx context.Context, url string) error
+	RecentHits(ctx context.Context, n int) ([]string, error)
 }
 
 type redisRepository struct {
@@ -55,4 +57,16 @@ func (r *redisRepository) Get(ctx context.Context, key string) (*model.Cache, er
 	}
 
 	return &cache, nil
+}
+
+func (r *redisRepository) AddRecentHit(ctx context.Context, url string) error {
+	pipe := r.client.Pipeline()
+	pipe.LPush(ctx, "recent_hits", url)
+	pipe.LTrim(ctx, "recent_hits", 0, 99)
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+func (r *redisRepository) RecentHits(ctx context.Context, n int) ([]string, error) {
+	return r.client.LRange(ctx, "recent_hits", 0, int64(n-1)).Result()
 }

@@ -4,6 +4,7 @@ import (
 	"cachesrv/internal/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -62,4 +63,14 @@ func (h *CacheHandler) GetCache(c *gin.Context) {
 		c.Header("Last-Modified", cache.LastModified)
 	}
 	c.Data(http.StatusOK, "application/json", []byte(cache.Body))
+}
+
+func (h *CacheHandler) RecentHits(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	hits, err := h.cacheService.RecentHits(c, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, hits)
 }
